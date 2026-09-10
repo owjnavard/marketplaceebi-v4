@@ -32,7 +32,7 @@ export default function Rfq() {
   const [lines, setLines] = useState<PartLine[]>([])
   const [commitments, setCommitments] = useState<Commitment[]>([])
   const [terms, setTerms] = useState<PaymentTerms>({
-    method: 'mixed', prepayment: 30, chequeMonths: 3, note: '',
+    method: 'cash', prepayment: 30, months: 3, note: '',
   })
   const [chosen, setChosen] = useState<string[]>([])
   const [showContact, setShowContact] = useState(true)
@@ -173,7 +173,7 @@ export default function Rfq() {
   }
 
   return (
-    <div className="mx-auto max-w-[1240px] px-5 py-8">
+    <div className="mx-auto max-w-[1600px] px-3 sm:px-5 py-8">
       <div className="mb-6">
         <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.2em] text-signal-600">استعلام پروژه</p>
         <h1 className="text-2xl font-extrabold text-steel-900">

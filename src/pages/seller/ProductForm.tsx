@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, Percent, Plus, Trash2 } from 'lucide-react'
+import { ArrowRight, Percent, Plus, Trash2, Wand2 } from 'lucide-react'
 import { PanelHead } from '@/layouts/PanelLayout'
 import { Badge, Button, Card, Checkbox, Field, Input, Select, Spinner, Textarea } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -52,9 +52,38 @@ export default function ProductForm() {
     )
   }, [id, isNew])
 
+  const category = categories.find((c) => c.id === form.categoryId)
+
+  /**
+   * ساخت خودکار نام محصول.
+   * نام از دسته‌بندی، برند و ویژگی‌های پرشده ساخته می‌شود. تا وقتی
+   * کاربر نام را دستی عوض نکرده، با هر تغییر ویژگی‌ها به‌روز می‌شود.
+   */
+  const [autoName, setAutoName] = useState(true)
+
+  const suggestedName = useMemo(() => {
+    if (!category) return ''
+    const parts: string[] = [category.name]
+    for (const a of category.attributes) {
+      const v = form.attributes[a.key]
+      if (v == null || v === '' || v === false) continue
+      if (a.type === 'boolean') {
+        parts.push(a.label)
+      } else {
+        parts.push(`${toFa(String(v))}${a.unit ? ` ${a.unit}` : ''}`)
+      }
+    }
+    if (form.brand.trim()) parts.push(form.brand.trim())
+    return parts.join(' ')
+  }, [category, form.attributes, form.brand])
+
+  useEffect(() => {
+    if (autoName && suggestedName) set('name', suggestedName)
+  }, [autoName, suggestedName])
+
   if (loading) return <Spinner />
 
-  const category = categories.find((c) => c.id === form.categoryId)
+
   const set = <K extends keyof Product>(key: K, value: Product[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
 
@@ -136,8 +165,36 @@ export default function ProductForm() {
           <Card>
             <h2 className="border-b border-line px-4 py-3 text-[15px] font-bold text-steel-900">اطلاعات پایه</h2>
             <div className="grid gap-4 p-4 sm:grid-cols-2">
-              <Field label="نام محصول" required error={errors.name} className="sm:col-span-2">
-                <Input value={form.name} onChange={(e) => set('name', e.target.value)} invalid={!!errors.name} placeholder="مثلاً: موتور کشش گیرلس ۶۳۰ کیلوگرم" />
+              <Field
+                label="نام محصول"
+                required
+                error={errors.name}
+                hint={autoName ? 'از دسته‌بندی و ویژگی‌ها ساخته می‌شود' : undefined}
+                className="sm:col-span-2"
+              >
+                <div className="flex gap-2">
+                  <Input
+                    value={form.name}
+                    onChange={(e) => {
+                      // به‌محض ویرایش دستی، ساخت خودکار متوقف می‌شود
+                      setAutoName(false)
+                      set('name', e.target.value)
+                    }}
+                    invalid={!!errors.name}
+                    placeholder="مثلاً: موتور کشش گیرلس ۶۳۰ کیلوگرم"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant={autoName ? 'primary' : 'outline'}
+                    onClick={() => setAutoName((v) => !v)}
+                    title="ساخت خودکار نام از روی ویژگی‌ها"
+                    className="shrink-0"
+                  >
+                    <Wand2 size={15} />
+                    خودکار
+                  </Button>
+                </div>
               </Field>
               <Field label="کد فنی / پارت‌نامبر" required error={errors.partNumber}>
                 <Input value={form.partNumber} onChange={(e) => set('partNumber', e.target.value)} dir="ltr" className="code" invalid={!!errors.partNumber} placeholder="MNT-WYJ-630" />

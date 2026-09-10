@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowLeftRight, Check, Eye, Lock, MapPin, Plus, ShieldCheck, Trash2,
 } from 'lucide-react'
-import { Badge, Button, Card, Field, Input, Select, Spinner, Stars, Textarea } from '@/components/ui'
+import { Badge, Button, Card, Field, Input, Spinner, Stars, Textarea } from '@/components/ui'
 import { api } from '@/lib/api'
 import type { Seller } from '@/lib/api/types'
 import {
-  paymentLabel,
-  type Commitment, type InquirySpec, type PartLine, type PaymentMethod, type PaymentTerms,
+  PAYMENT_METHODS, paymentLabel,
+  type Commitment, type InquirySpec, type PartLine, type PaymentTerms,
 } from '@/features/rfq/inquiry'
 import { cn, toEn, toFa, toman } from '@/lib/utils'
 
@@ -203,41 +203,62 @@ export function SendStep({
         <h2 className="border-b border-line px-5 py-3.5 text-[15px] font-extrabold text-steel-900">
           نحوه پرداخت
         </h2>
-        <div className="grid gap-4 p-5 sm:grid-cols-3">
-          <Field label="روش پرداخت" required>
-            <Select value={terms.method} onChange={(e) => setTerms((t) => ({ ...t, method: e.target.value as PaymentMethod }))}>
-              {(Object.keys(paymentLabel) as PaymentMethod[]).map((m) => (
-                <option key={m} value={m}>{paymentLabel[m]}</option>
+        <div className="space-y-4 p-5">
+          <Field label="روش پرداخت" required group>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {PAYMENT_METHODS.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setTerms((t) => ({ ...t, method: m }))}
+                  className={cn(
+                    'rounded-xl border py-3 text-[14px] font-bold transition-colors',
+                    terms.method === m
+                      ? 'border-steel-800 bg-steel-800 text-white'
+                      : 'border-line bg-paper text-steel-600 hover:border-steel-300',
+                  )}
+                >
+                  {paymentLabel[m]}
+                </button>
               ))}
-            </Select>
+            </div>
           </Field>
-          <Field label="پیش‌پرداخت" hint="درصد">
-            <Input
-              value={toFa(terms.prepayment)}
-              onChange={(e) => setTerms((t) => ({ ...t, prepayment: Math.min(100, num(e.target.value)) }))}
-              className="num"
-              inputMode="numeric"
-            />
-          </Field>
-          <Field label="مدت چک" hint="ماه">
-            <Input
-              value={toFa(terms.chequeMonths)}
-              onChange={(e) => setTerms((t) => ({ ...t, chequeMonths: num(e.target.value) }))}
-              className="num"
-              inputMode="numeric"
-              disabled={terms.method === 'cash'}
-            />
-          </Field>
-          <Field label="شرایط تکمیلی" hint="تهاتر، مرحله‌بندی پرداخت، ضمانت‌نامه…" className="sm:col-span-3">
+
+          {/* پیش‌پرداخت و مدت فقط برای اقساط و چک معنا دارند */}
+          {terms.method !== 'cash' && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="پیش‌پرداخت" hint="درصد">
+                <Input
+                  value={toFa(terms.prepayment)}
+                  onChange={(e) => setTerms((t) => ({ ...t, prepayment: Math.min(100, num(e.target.value)) }))}
+                  className="num"
+                  inputMode="numeric"
+                />
+              </Field>
+              <Field
+                label={terms.method === 'installment' ? 'تعداد اقساط' : 'مدت چک'}
+                hint="ماه"
+              >
+                <Input
+                  value={toFa(terms.months)}
+                  onChange={(e) => setTerms((t) => ({ ...t, months: num(e.target.value) }))}
+                  className="num"
+                  inputMode="numeric"
+                />
+              </Field>
+            </div>
+          )}
+
+          <Field label="شرایط تکمیلی" hint="اختیاری — متن آزاد">
             <Textarea
               value={terms.note}
               onChange={(e) => setTerms((t) => ({ ...t, note: e.target.value }))}
-              placeholder="مثلاً: ۳۰٪ پیش‌پرداخت، ۴۰٪ پس از تحویل اجناس، ۳۰٪ پس از راه‌اندازی."
+              className="min-h-28"
+              placeholder="هر شرطی که لازم می‌دانید اینجا بنویسید؛ متن همان‌طور که وارد می‌کنید برای پیمانکار ارسال می‌شود."
             />
           </Field>
         </div>
 
-        {terms.prepayment > 0 && grandTotal > 0 && (
+        {terms.method !== 'cash' && terms.prepayment > 0 && grandTotal > 0 && (
           <p className="border-t border-line bg-steel-50 px-5 py-3 text-[13px] text-steel-600">
             پیش‌پرداخت معادل{' '}
             <span className="num font-extrabold text-steel-900">

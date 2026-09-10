@@ -8,7 +8,7 @@ import { api } from '@/lib/api'
 import type { Order, OrderEvidence, OrderStatus, Product } from '@/lib/api/types'
 import { orderStatusLabel, orderStatusTone } from '@/lib/labels'
 import { cn, toFa, toman } from '@/lib/utils'
-import { useToasts } from '@/store'
+import { useAuth, useToasts } from '@/store'
 import { SELLER_ID } from './Dashboard'
 
 /* ══════════════════════════════════════════════════════════════
@@ -156,9 +156,14 @@ function EvidenceModal({
   const [kind, setKind] = useState<OrderEvidence['kind']>('waybill')
   const [reference, setReference] = useState('')
   const [note, setNote] = useState('')
+  /* اطلاعات حواله تحویل — مطابق فرم کاغذی رایج */
+  const [deliveredBy, setDeliveredBy] = useState('')
+  const [receivedBy, setReceivedBy] = useState('')
+  const [receiverPhone, setReceiverPhone] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const push = useToasts((s) => s.push)
+  const user = useAuth((s) => s.user)
 
   const active = EVIDENCE_KINDS.find((k) => k.key === kind)!
 
@@ -175,6 +180,10 @@ function EvidenceModal({
         reference: reference.trim(),
         note: note.trim() || undefined,
         at: 'همین حالا',
+        deliveredBy: deliveredBy.trim() || undefined,
+        receivedBy: receivedBy.trim() || undefined,
+        receiverPhone: receiverPhone.trim() || undefined,
+        registeredBy: user?.name,
       })
       push(`وضعیت سفارش به «${orderStatusLabel[status]}» تغییر کرد`)
       onDone()
@@ -236,8 +245,32 @@ function EvidenceModal({
           />
         </Field>
 
+        {/* اطلاعات تحویل — برای وضعیت‌های ارسال و تحویل */}
+        {(status === 'shipped' || status === 'delivered') && (
+          <div className="space-y-4 rounded-2xl border border-line p-4">
+            <p className="text-[13.5px] font-bold text-steel-800">اطلاعات تحویل</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="نام تحویل‌دهنده" hint="راننده یا نماینده شما">
+                <Input value={deliveredBy} onChange={(e) => setDeliveredBy(e.target.value)} />
+              </Field>
+              <Field label="نام تحویل‌گیرنده">
+                <Input value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)} />
+              </Field>
+              <Field label="تلفن همراه تحویل‌گیرنده" className="sm:col-span-2">
+                <Input
+                  value={receiverPhone}
+                  onChange={(e) => setReceiverPhone(e.target.value)}
+                  className="num"
+                  inputMode="numeric"
+                  placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                />
+              </Field>
+            </div>
+          </div>
+        )}
+
         <Field label="توضیح تکمیلی" hint="اختیاری">
-          <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="نام راننده، شرکت باربری، زمان تحویل…" />
+          <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="شرکت باربری، زمان تحویل، وضعیت بسته‌بندی…" />
         </Field>
       </div>
     </Modal>

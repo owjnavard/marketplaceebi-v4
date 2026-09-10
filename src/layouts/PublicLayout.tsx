@@ -38,7 +38,7 @@ function CompareBar() {
 
   return (
     <div className="animate-in-up sticky bottom-0 z-40 border-t border-steel-700 bg-steel-900 text-white">
-      <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-3 px-4 py-2.5">
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-3 sm:px-5 py-2.5">
         <GitCompareArrows size={17} className="text-signal-400" />
         <p className="text-[15px] font-semibold">
           <span className="num">{toFa(compare.length)}</span> محصول برای مقایسه انتخاب شده
@@ -109,7 +109,7 @@ function Footer() {
       {/* نوار هشدار صنعتی — امضای بصری سایت */}
       <div className="h-px bg-gradient-to-l from-transparent via-signal-500/50 to-transparent" />
 
-      <div className="mx-auto max-w-[1280px] px-4 py-10">
+      <div className="mx-auto max-w-[1600px] px-3 sm:px-5 py-10">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Logo dark />
@@ -151,7 +151,7 @@ function Footer() {
       </div>
 
       <div className="border-t border-steel-800">
-        <div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-2 px-4 py-4 text-[14px] text-steel-500 sm:flex-row">
+        <div className="mx-auto flex max-w-[1600px] flex-col items-center justify-between gap-2 px-3 sm:px-5 py-4 text-[14px] text-steel-500 sm:flex-row">
           <p>© ۱۴۰۳ آسانسور مارکت — تمامی حقوق محفوظ است.</p>
           <p>ساخته شده برای اهل فن</p>
         </div>

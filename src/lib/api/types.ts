@@ -286,6 +286,14 @@ export interface OrderEvidence {
   reference: string
   note?: string
   at: string
+  /** نام تحویل‌دهنده — معمولاً راننده یا نماینده فروشنده */
+  deliveredBy?: string
+  /** نام تحویل‌گیرنده در محل پروژه */
+  receivedBy?: string
+  /** تلفن همراه تحویل‌گیرنده */
+  receiverPhone?: string
+  /** کاربری که این مدرک را ثبت کرده */
+  registeredBy?: string
 }
 
 export interface Order {

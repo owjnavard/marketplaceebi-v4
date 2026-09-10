@@ -83,17 +83,42 @@ export function autoFillColumn(
   })
 }
 
+/**
+ * مقادیر پیش‌فرض جدول توقف‌ها بر حسب سانتی‌متر.
+ * اعداد رایج اجرا هستند تا کاربر برای یک پروژه معمولی چیزی وارد
+ * نکند و فقط موارد خاص را دستی عوض کند.
+ */
+export const STOP_DEFAULTS = {
+  /** ارتفاع سقف هر طبقه */
+  ceiling: 240,
+  /** فاصله بین طبقات */
+  height: 315,
+  /** ارتفاع اورهد — ردیف بالاترین توقف */
+  overhead: 450,
+  /** عمق چاهک — ردیف PIT */
+  pit: 160,
+} as const
+
 export function makeStops(count: number, prev: StopRow[] = []): StopRow[] {
   const labels = ['P', 'G']
   const rows: StopRow[] = [
-    { index: 0, label: 'PIT', ceiling: null, height: null, entryFront: false, entryRear: false, entrySide: false },
+    {
+      index: 0,
+      label: 'PIT',
+      ceiling: null,
+      height: STOP_DEFAULTS.pit,
+      entryFront: false,
+      entryRear: false,
+      entrySide: false,
+    },
   ]
   for (let i = 1; i <= count; i++) {
     rows.push({
       index: i,
       label: labels[i - 1] ?? String(i - 2),
-      ceiling: null,
-      height: null,
+      ceiling: STOP_DEFAULTS.ceiling,
+      // بالاترین توقف ارتفاع اورهد می‌گیرد، بقیه فاصله بین طبقات
+      height: i === count ? STOP_DEFAULTS.overhead : STOP_DEFAULTS.height,
       entryFront: true,
       entryRear: false,
       entrySide: false,
@@ -102,7 +127,17 @@ export function makeStops(count: number, prev: StopRow[] = []): StopRow[] {
   // مقادیری که کاربر قبلاً پر کرده حفظ می‌شوند
   return rows.map((r) => {
     const old = prev.find((x) => x.index === r.index)
-    return old ? { ...r, ...old, index: r.index } : r
+    if (!old) return r
+    const merged = { ...r, ...old, index: r.index }
+    // ردیفی که دیگر بالاترین توقف نیست، نباید ارتفاع اورهد را نگه دارد
+    if (r.index !== count && old.height === STOP_DEFAULTS.overhead) {
+      merged.height = STOP_DEFAULTS.height
+    }
+    // بالاترین توقف جدید، اورهد می‌گیرد اگر هنوز مقدار پیش‌فرض فاصله داشته باشد
+    if (r.index === count && old.height === STOP_DEFAULTS.height) {
+      merged.height = STOP_DEFAULTS.overhead
+    }
+    return merged
   })
 }
 
@@ -139,7 +174,7 @@ export function deriveStops(rows: StopRow[], stops: number): DerivedStops {
   return {
     cabinEntries,
     landingDoors,
-    travel: Math.round((travelCm / 100) * 100) / 100,
+    travel: Math.round(travelCm) / 100,
     pitDepth: rows.find((r) => r.index === 0)?.height ?? null,
     overhead: rows.find((r) => r.index === stops)?.height ?? null,
   }
@@ -393,7 +428,7 @@ export function buildParts(spec: InquirySpec, st: BuildSettings): PartLine[] {
   /* ── سیم‌بکسل و ایمنی ─────────────────────────────────────── */
   if (!hydraulic) {
     const ropes = spec.capacityKg <= 450 ? 3 : spec.capacityKg <= 1000 ? 4 : 6
-    const len = (travel + 10) * ropes
+    const len = Math.ceil((travel + 10) * ropes)
     add('mechanical', 'سیم‌بکسل فولادی', `${toFa(ropes)} رشته — حدود ${toFa(len)} متر`, len * u, 'متر', 'c6', 'mechanical')
   }
 
@@ -418,7 +453,7 @@ export function buildParts(spec: InquirySpec, st: BuildSettings): PartLine[] {
   add('electrical', 'شاسی و نمایشگر طبقات', `${toFa(spec.stops)} ست طبقه و ۱ ست کابین`, (spec.stops + 1) * u, 'ست', 'c8', 'commissioning')
   add('electrical', 'روشنایی کابین با باتری اضطراری', 'الزام استاندارد', u, 'دستگاه', 'c8', 'commissioning')
   add('electrical', 'سیستم ارتباط اضطراری', 'آیفون کابین', u, 'دستگاه', 'c8', 'commissioning')
-  add('electrical', 'تراول کابل', `حدود ${toFa(Math.round(travel / 2 + 6))} متر`, Math.round(travel / 2 + 6) * u, 'متر', 'c8', 'revision')
+  add('electrical', 'تراول کابل', `حدود ${toFa(Math.ceil(travel / 2 + 6))} متر`, Math.ceil(travel / 2 + 6) * u, 'متر', 'c8', 'revision')
 
   if (spec.usage === 'hospital' || spec.usage === 'commercial' || spec.stops >= 8) {
     add('electrical', 'سیستم نجات اضطراری (ARV)', 'رساندن کابین به نزدیک‌ترین طبقه در قطعی برق', u, 'دستگاه', 'c3', 'commissioning')
@@ -524,19 +559,23 @@ export function commitmentsFrom(
 }
 
 /* ── شرایط پرداخت ───────────────────────────────────────────── */
-export type PaymentMethod = 'cash' | 'cheque' | 'mixed' | 'barter'
+/** سه روش پرداخت مورد قبول */
+export type PaymentMethod = 'cash' | 'installment' | 'cheque'
 
 export const paymentLabel: Record<PaymentMethod, string> = {
   cash: 'نقدی',
-  cheque: 'چکی',
-  mixed: 'نقد و چک',
-  barter: 'تهاتر',
+  installment: 'اقساط',
+  cheque: 'چک',
 }
+
+export const PAYMENT_METHODS: PaymentMethod[] = ['cash', 'installment', 'cheque']
 
 export interface PaymentTerms {
   method: PaymentMethod
-  /** درصد پیش‌پرداخت */
+  /** درصد پیش‌پرداخت — فقط برای اقساط و چک معنا دارد */
   prepayment: number
-  chequeMonths: number
+  /** تعداد ماه اقساط یا مدت چک */
+  months: number
+  /** شرایط تکمیلی — متن آزاد و یکپارچه */
   note: string
 }

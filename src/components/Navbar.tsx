@@ -73,7 +73,7 @@ export function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-line/70 bg-paper/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-18 max-w-[1240px] items-center gap-4 px-5">
+        <div className="mx-auto flex h-18 max-w-[1600px] items-center gap-4 px-3 sm:px-5">
           <button
             onClick={() => setMenuOpen(true)}
             className="-mr-2 rounded-full p-2.5 text-steel-600 transition-colors hover:bg-steel-100 lg:hidden"

@@ -331,7 +331,26 @@ export function OrderDetailModal({
                     {e.kind === 'waybill' ? 'شماره حواله: ' : e.kind === 'photo' ? 'تصویر: ' : 'توضیح: '}
                     <span className="num font-semibold text-steel-900">{e.reference}</span>
                   </p>
-                  {e.note && <p className="mt-1 text-[12.5px] leading-6 text-steel-500">{e.note}</p>}
+                  {(e.deliveredBy || e.receivedBy || e.receiverPhone) && (
+                    <dl className="mt-2 grid gap-2 sm:grid-cols-3">
+                      {[
+                        { l: 'تحویل‌دهنده', v: e.deliveredBy },
+                        { l: 'تحویل‌گیرنده', v: e.receivedBy },
+                        { l: 'تلفن', v: e.receiverPhone },
+                      ]
+                        .filter((r) => r.v)
+                        .map((r) => (
+                          <div key={r.l} className="rounded-lg bg-steel-50 px-3 py-1.5">
+                            <dt className="text-[11.5px] text-steel-400">{r.l}</dt>
+                            <dd className="num text-[12.5px] font-semibold text-steel-800">{r.v}</dd>
+                          </div>
+                        ))}
+                    </dl>
+                  )}
+                  {e.note && <p className="mt-1.5 text-[12.5px] leading-6 text-steel-500">{e.note}</p>}
+                  {e.registeredBy && (
+                    <p className="mt-1.5 text-[11.5px] text-steel-400">ثبت‌کننده: {e.registeredBy}</p>
+                  )}
                 </div>
               ))}
             </div>

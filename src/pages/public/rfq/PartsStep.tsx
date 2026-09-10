@@ -3,7 +3,7 @@ import {
   ChevronDown, HelpCircle, Percent, Plus, RotateCcw, Save, ShoppingCart,
   Store, Trash2, X,
 } from 'lucide-react'
-import { Badge, Button, Card, Input, Select, Stars } from '@/components/ui'
+import { Badge, Button, Card, Input, NumberStepper, Select, Stars } from '@/components/ui'
 import { PartSchematic, schematicFor } from '@/components/PartSchematic'
 import { api } from '@/lib/api'
 import type { Category, Product, Seller } from '@/lib/api/types'
@@ -14,10 +14,8 @@ import {
   type BuildSettings, type InquirySpec, type LandingDoorKind, type MachineRoom,
   type PartGroup, type PartLine, type Suspension, type SystemKind,
 } from '@/features/rfq/inquiry'
-import { cn, toEn, toFa, toman } from '@/lib/utils'
+import { cn, toFa, toman } from '@/lib/utils'
 import { useAuth, useCart, useToasts } from '@/store'
-
-const num = (v: string) => Number(toEn(v).replace(/[^\d.]/g, '')) || 0
 
 /** سه صفحه‌ای که در ستون چپ جابه‌جا می‌شوند */
 type Pane = 'parts' | 'help' | 'shop'
@@ -100,6 +98,12 @@ export function PartsStep({
 
   const setLine = (id: string, patch: Partial<PartLine>) =>
     setLines((ls) => ls.map((l) => (l.id === id ? { ...l, ...patch } : l)))
+
+  /** انتخاب یا برداشتن تیک همه اقلام یک گروه */
+  const toggleGroup = (rows: PartLine[], on: boolean) => {
+    const ids = new Set(rows.map((r) => r.id))
+    setLines((ls) => ls.map((l) => (ids.has(l.id) ? { ...l, selected: on } : l)))
+  }
 
   const addCustom = () =>
     setLines((ls) => [
@@ -210,23 +214,11 @@ export function PartsStep({
                 </Select>
               </SettingRow>
 
-              <SettingRow label="۵. سرعت آسانسور" hint="m/s" helpKey="speed" onHelp={openHelp} required>
-                <div className="flex flex-wrap gap-1.5">
-                  {SPEED_STEPS.map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setSettings((s) => ({ ...s, speed: v }))}
-                      className={cn(
-                        'num rounded-full border px-3 py-1.5 text-[12.5px] font-bold transition-colors',
-                        settings.speed === v
-                          ? 'border-signal-500 bg-signal-400 text-steel-900'
-                          : 'border-line bg-paper text-steel-600 hover:border-steel-300',
-                      )}
-                    >
-                      {toFa(v)}
-                    </button>
-                  ))}
-                </div>
+              <SettingRow label="۵. سرعت آسانسور" hint="متر بر ثانیه" helpKey="speed" onHelp={openHelp} required>
+                <SpeedSlider
+                  value={settings.speed}
+                  onChange={(v) => setSettings((s) => ({ ...s, speed: v }))}
+                />
               </SettingRow>
 
               <SettingRow label="۶. سیستم تعلیق" helpKey="suspension" onHelp={openHelp} required>
@@ -252,23 +244,21 @@ export function PartsStep({
                 ['karaSling', '۷. سیستم کارا سلینگی'],
                 ['cwtSafetyGear', '۸. کادر وزنه پاراشوت‌دار'],
               ] as const).map(([key, label]) => (
-                <div key={key} className="flex items-center gap-2">
-                  <label
-                    className={cn(
-                      'flex flex-1 cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition-colors',
-                      settings[key] ? 'border-steel-400 bg-steel-50' : 'border-line hover:border-steel-300',
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={settings[key]}
-                      onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.checked }))}
-                      className="h-4 w-4"
-                    />
-                    <span className="text-[13px] font-semibold text-steel-700">{label}</span>
-                  </label>
-                  <HelpButton onClick={() => openHelp(key)} />
-                </div>
+                <label
+                  key={key}
+                  className={cn(
+                    'flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition-colors',
+                    settings[key] ? 'border-steel-400 bg-steel-50' : 'border-line hover:border-steel-300',
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={settings[key]}
+                    onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.checked }))}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-[13px] font-semibold text-steel-700">{label}</span>
+                </label>
               ))}
             </fieldset>
           </div>
@@ -339,8 +329,10 @@ export function PartsStep({
             <CollapsibleTable
               title="لوازم اصلی"
               count={mainLines.filter(inGroup).length}
+              checkedCount={mainLines.filter(inGroup).filter((l) => l.selected).length}
               open={openMain}
               onToggle={() => setOpenMain((v) => !v)}
+              onToggleAll={(on) => toggleGroup(mainLines.filter(inGroup), on)}
             >
               <PartsTable
                 rows={mainLines.filter(inGroup)}
@@ -358,8 +350,10 @@ export function PartsStep({
             <CollapsibleTable
               title="سایر لوازم"
               count={otherLines.filter(inGroup).length}
+              checkedCount={otherLines.filter(inGroup).filter((l) => l.selected).length}
               open={openOther}
               onToggle={() => setOpenOther((v) => !v)}
+              onToggleAll={(on) => toggleGroup(otherLines.filter(inGroup), on)}
               action={
                 <Button
                   size="sm"
@@ -444,6 +438,52 @@ export function PartsStep({
 
 /* ── اجزای کوچک ─────────────────────────────────────────────── */
 
+/**
+ * اسلایدر سرعت.
+ * روی مقادیر استاندارد می‌چسبد — بین آن‌ها عددی وجود ندارد، پس
+ * اسلایدر روی «اندیس» حرکت می‌کند نه روی خود سرعت.
+ */
+function SpeedSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const idx = Math.max(0, SPEED_STEPS.indexOf(value as (typeof SPEED_STEPS)[number]))
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between">
+        <span className="num text-[19px] font-extrabold text-steel-900">
+          {toFa(value)}
+          <span className="mr-1 text-[11.5px] font-normal text-steel-400">m/s</span>
+        </span>
+        <span className="num text-[11.5px] text-steel-400">
+          {toFa(SPEED_STEPS[0])} تا {toFa(SPEED_STEPS[SPEED_STEPS.length - 1])}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={SPEED_STEPS.length - 1}
+        step={1}
+        value={idx}
+        onChange={(e) => onChange(SPEED_STEPS[Number(e.target.value)])}
+        className="w-full"
+        aria-label="سرعت آسانسور"
+      />
+      <div className="mt-1.5 flex justify-between">
+        {SPEED_STEPS.map((v) => (
+          <button
+            key={v}
+            onClick={() => onChange(v)}
+            className={cn(
+              'num text-[10.5px] transition-colors',
+              value === v ? 'font-extrabold text-steel-900' : 'text-steel-300 hover:text-steel-600',
+            )}
+          >
+            {toFa(v)}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function HelpButton({ onClick }: { onClick: () => void }) {
   return (
     <button
@@ -501,16 +541,25 @@ function GroupChip({
   )
 }
 
+/**
+ * هر دسته (لوازم اصلی / سایر لوازم) مثل یک گروه عمل می‌کند:
+ * یک تیک در سربرگ، همه اقلام همان گروه را با هم انتخاب یا برمی‌دارد.
+ */
 function CollapsibleTable({
-  title, count, open, onToggle, action, children,
+  title, count, checkedCount, open, onToggle, onToggleAll, action, children,
 }: {
   title: string
   count: number
+  checkedCount: number
   open: boolean
   onToggle: () => void
+  onToggleAll: (on: boolean) => void
   action?: React.ReactNode
   children: React.ReactNode
 }) {
+  const all = count > 0 && checkedCount === count
+  const some = checkedCount > 0 && checkedCount < count
+
   return (
     <Card className="overflow-hidden">
       <div
@@ -519,8 +568,22 @@ function CollapsibleTable({
       >
         <span className="flex items-center gap-2.5">
           <ChevronDown size={17} className={cn('text-steel-400 transition-transform', !open && '-rotate-90')} />
+          <input
+            type="checkbox"
+            checked={all}
+            ref={(el) => {
+              if (el) el.indeterminate = some
+            }}
+            disabled={count === 0}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => onToggleAll(e.target.checked)}
+            className="h-4 w-4 disabled:opacity-30"
+            aria-label={`انتخاب همه ${title}`}
+          />
           <span className="text-[14px] font-extrabold text-steel-900">{title}</span>
-          <span className="num text-[13px] font-normal text-steel-400">({toFa(count)})</span>
+          <span className="num text-[13px] font-normal text-steel-400">
+            ({toFa(checkedCount)} از {toFa(count)})
+          </span>
         </span>
         {action}
       </div>
@@ -568,7 +631,7 @@ function PartsTable({
             <th className="w-10 px-3 py-3"></th>
             <th className="w-12 px-2 py-3">ردیف</th>
             <th className="px-3 py-3">عنوان</th>
-            <th className="w-28 px-3 py-3">تعداد</th>
+            <th className="w-40 px-3 py-3">تعداد</th>
             <th className="w-20 px-3 py-3">واحد</th>
             <th className="w-44 px-3 py-3">انتخاب محصول</th>
             <th className="w-32 px-3 py-3">قیمت</th>
@@ -609,17 +672,18 @@ function PartsTable({
                 </td>
                 <td className="px-3 py-2.5">
                   <div className="flex items-center gap-1">
-                    <Input
-                      value={toFa(l.quantity)}
-                      onChange={(e) => onChange(l.id, { quantity: Math.max(1, num(e.target.value)) })}
-                      className="num h-9 w-16 text-center"
-                      inputMode="numeric"
+                    <NumberStepper
+                      value={l.quantity}
+                      min={1}
+                      max={9999}
+                      onChange={(n) => onChange(l.id, { quantity: n })}
+                      className="h-9 w-28"
                     />
                     {l.quantity !== l.computedQty && !l.custom && (
                       <button
                         onClick={() => onChange(l.id, { quantity: l.computedQty })}
                         title={`بازگشت به مقدار محاسبه‌شده (${toFa(l.computedQty)})`}
-                        className="rounded-lg p-1.5 text-steel-400 transition-colors hover:bg-steel-100 hover:text-steel-800"
+                        className="shrink-0 rounded-lg p-1.5 text-steel-400 transition-colors hover:bg-steel-100 hover:text-steel-800"
                       >
                         <RotateCcw size={14} />
                       </button>

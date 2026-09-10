@@ -185,7 +185,7 @@ export default function PanelLayout({ role }: { role: Role }) {
           <span className="text-sm font-bold text-steel-900">{nav.title}</span>
         </header>
 
-        <div className="min-w-0 flex-1 p-5 md:p-8">
+        <div className="min-w-0 flex-1 p-3 sm:p-5 lg:p-6">
           <Suspense fallback={<Spinner />}>
             <Outlet />
           </Suspense>

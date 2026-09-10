@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { LayoutGrid, PackageSearch, Rows3, SlidersHorizontal, X } from 'lucide-react'
+import { LayoutGrid, PackageSearch, Rows3, Search, SlidersHorizontal, X } from 'lucide-react'
 import { ProductCard, ProductCardSkeleton } from '@/components/ProductCard'
 import { Badge, Button, Checkbox, Empty, Input, Select } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -33,6 +33,17 @@ export default function Catalog() {
 
   /* وضعیت فیلترها از آدرس صفحه خوانده می‌شود تا لینک‌ها قابل اشتراک باشند */
   const selCats = params.getAll('cat')
+  /* جستجوی نام محصول در ستون فیلتر — جدا از جستجوی سراسری هدر */
+  const nameQuery = params.get('name') ?? ''
+  const setNameQuery = (v: string) =>
+    setParams((p) => {
+      const n = new URLSearchParams(p)
+      if (v) n.set('name', v)
+      else n.delete('name')
+      n.delete('page')
+      return n
+    })
+
   const selBrands = params.getAll('brand')
   const selSellers = params.getAll('seller')
   /* ویژگی‌های دسته به شکل attr:<key>=<value> در آدرس ذخیره می‌شوند
@@ -55,7 +66,7 @@ export default function Catalog() {
   const attrCount = Object.values(selAttrs).reduce((n, v) => n + v.length, 0)
   const activeCount =
     selCats.length + selBrands.length + selModes.length + selSellers.length + attrCount +
-    (inStock ? 1 : 0) + (min || max ? 1 : 0)
+    (inStock ? 1 : 0) + (min || max ? 1 : 0) + (nameQuery ? 1 : 0)
 
   useEffect(() => {
     void Promise.all([api.categories(), api.brands(), api.sellers()]).then(([c, b, s]) => {
@@ -70,7 +81,7 @@ export default function Catalog() {
     setLoading(true)
     void api
       .products({
-        q: q || undefined,
+        q: [q, nameQuery].filter(Boolean).join(' ') || undefined,
         categoryIds: selCats.length ? selCats : undefined,
         brands: selBrands.length ? selBrands : undefined,
         sellerIds: selSellers.length ? selSellers : undefined,
@@ -126,17 +137,26 @@ export default function Catalog() {
 
   const filterPanel = (
     <div className="space-y-5">
-      <FilterGroup title="دسته‌بندی">
-        {categories.map((c) => (
-          <Checkbox
-            key={c.id}
-            label={c.name}
-            count={c.productCount}
-            checked={selCats.includes(c.id)}
-            onChange={() => toggleMulti('cat', c.id)}
+      {/* دسته‌بندی از منوی بالای سایت انتخاب می‌شود، نه از اینجا.
+          فیلترهای این ستون بر اساس ویژگی‌های همان دسته ساخته می‌شوند. */}
+      <FilterGroup title="جستجو در نام محصول">
+        <div className="relative">
+          <Search size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-steel-400" />
+          <Input
+            value={nameQuery}
+            onChange={(e) => setNameQuery(e.target.value)}
+            placeholder="نام محصول…"
+            className="h-10 pr-9"
           />
-        ))}
+        </div>
       </FilterGroup>
+
+      {activeCategories.length === 0 && (
+        <p className="rounded-xl bg-steel-50 px-4 py-3 text-[13px] leading-7 text-steel-500">
+          برای دیدن فیلترهای تخصصی، یک دسته‌بندی را از منوی «دسته‌بندی» در بالای صفحه
+          انتخاب کنید.
+        </p>
+      )}
 
       <FilterGroup title="نحوه قیمت‌گذاری">
         {MODES.map((m) => (
@@ -222,7 +242,7 @@ export default function Catalog() {
   )
 
   return (
-    <div className="mx-auto max-w-[1240px] px-5 py-8">
+    <div className="mx-auto max-w-[1600px] px-3 sm:px-5 py-8">
       {/* مسیر و عنوان */}
       <nav className="mb-4 flex items-center gap-1.5 text-[14px] text-steel-400">
         <Link to="/" className="transition-colors hover:text-steel-700">خانه</Link>
@@ -290,6 +310,7 @@ export default function Catalog() {
           {selModes.map((m) => (
             <Chip key={m} onRemove={() => toggleMulti('mode', m)}>{pricingModeLabel[m]}</Chip>
           ))}
+          {nameQuery && <Chip onRemove={() => setNameQuery('')}>نام: {nameQuery}</Chip>}
           {selBrands.map((b) => (
             <Chip key={b} onRemove={() => toggleMulti('brand', b)}>{b}</Chip>
           ))}

@@ -45,7 +45,7 @@ export default function Home() {
       <TrustStrip />
 
       {/* دسته‌بندی‌ها */}
-      <section className="mx-auto max-w-[1240px] px-5 py-20">
+      <section className="mx-auto max-w-[1600px] px-3 sm:px-5 py-20">
         <SectionHead
           eyebrow="کاتالوگ"
           title="دسته‌بندی قطعات و تجهیزات"
@@ -76,7 +76,7 @@ export default function Home() {
       <PricingModesExplainer />
 
       {/* محصولات پرفروش */}
-      <section className="mx-auto max-w-[1240px] px-5 py-20">
+      <section className="mx-auto max-w-[1600px] px-3 sm:px-5 py-20">
         <SectionHead
           eyebrow="پرفروش‌ترین‌ها"
           title="آنچه اهل فن بیشتر سفارش می‌دهند"
@@ -97,7 +97,7 @@ export default function Home() {
       <RfqBanner />
 
       {/* فروشندگان */}
-      <section className="mx-auto max-w-[1240px] px-5 py-20">
+      <section className="mx-auto max-w-[1600px] px-3 sm:px-5 py-20">
         <SectionHead
           eyebrow="تأمین‌کنندگان"
           title="فروشندگان تأییدشده"
@@ -132,7 +132,7 @@ export default function Home() {
 
       {/* بلاگ */}
       <section className="bg-paper">
-        <div className="mx-auto max-w-[1240px] px-5 py-20">
+        <div className="mx-auto max-w-[1600px] px-3 sm:px-5 py-20">
           <SectionHead
             eyebrow="دانش فنی"
             title="از تجربه میدانی، نه از بروشور"
@@ -333,7 +333,7 @@ function PricingModesExplainer() {
 
   return (
     <section className="bg-paper">
-      <div className="mx-auto max-w-[1240px] px-5 py-20">
+      <div className="mx-auto max-w-[1600px] px-3 sm:px-5 py-20">
         <SectionHead eyebrow="نحوه قیمت‌گذاری" title="هر کالا یک قیمت ثابت ندارد — و این عمدی است" />
         <p className="-mt-2 mb-6 max-w-2xl text-[15px] leading-7 text-steel-500">
           در صنعت آسانسور، قیمت خیلی از اقلام به ابعاد چاه، تعداد و محل پروژه بستگی دارد. به‌جای
