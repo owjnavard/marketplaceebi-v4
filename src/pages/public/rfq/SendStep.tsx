@@ -204,28 +204,48 @@ export function SendStep({
           نحوه پرداخت
         </h2>
         <div className="space-y-4 p-5">
-          <Field label="روش پرداخت" required group>
+          <Field
+            label="روش پرداخت"
+            required
+            hint="می‌توانید چند روش را با هم انتخاب کنید"
+            group
+          >
             <div className="grid gap-2 sm:grid-cols-3">
-              {PAYMENT_METHODS.map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setTerms((t) => ({ ...t, method: m }))}
-                  className={cn(
-                    'rounded-xl border py-3 text-[14px] font-bold transition-colors',
-                    terms.method === m
-                      ? 'border-steel-800 bg-steel-800 text-white'
-                      : 'border-line bg-paper text-steel-600 hover:border-steel-300',
-                  )}
-                >
-                  {paymentLabel[m]}
-                </button>
-              ))}
+              {PAYMENT_METHODS.map((m) => {
+                const on = terms.methods.includes(m)
+                return (
+                  <button
+                    key={m}
+                    onClick={() =>
+                      setTerms((t) => ({
+                        ...t,
+                        methods: on ? t.methods.filter((x) => x !== m) : [...t.methods, m],
+                      }))
+                    }
+                    className={cn(
+                      'flex items-center justify-center gap-2 rounded-xl border py-3 text-[14px] font-bold transition-colors',
+                      on
+                        ? 'border-steel-800 bg-steel-800 text-white'
+                        : 'border-line bg-paper text-steel-600 hover:border-steel-300',
+                    )}
+                  >
+                    {on && <Check size={15} className="shrink-0 text-signal-400" />}
+                    {paymentLabel[m]}
+                  </button>
+                )
+              })}
             </div>
           </Field>
 
-          {/* پیش‌پرداخت و مدت فقط برای اقساط و چک معنا دارند */}
-          {terms.method !== 'cash' && (
-            <div className="grid gap-4 sm:grid-cols-2">
+          {terms.methods.length === 0 && (
+            <p className="rounded-xl bg-notice-soft px-4 py-3 text-[13px] text-notice">
+              حداقل یک روش پرداخت انتخاب کنید.
+            </p>
+          )}
+
+          {/* فیلدهای هر روش فقط وقتی همان روش انتخاب شده باشد */}
+          {(terms.methods.includes('installment') || terms.methods.includes('cheque')) && (
+            <div className="grid gap-4 sm:grid-cols-3">
               <Field label="پیش‌پرداخت" hint="درصد">
                 <Input
                   value={toFa(terms.prepayment)}
@@ -234,17 +254,26 @@ export function SendStep({
                   inputMode="numeric"
                 />
               </Field>
-              <Field
-                label={terms.method === 'installment' ? 'تعداد اقساط' : 'مدت چک'}
-                hint="ماه"
-              >
-                <Input
-                  value={toFa(terms.months)}
-                  onChange={(e) => setTerms((t) => ({ ...t, months: num(e.target.value) }))}
-                  className="num"
-                  inputMode="numeric"
-                />
-              </Field>
+              {terms.methods.includes('installment') && (
+                <Field label="تعداد اقساط" hint="ماه">
+                  <Input
+                    value={toFa(terms.installmentMonths)}
+                    onChange={(e) => setTerms((t) => ({ ...t, installmentMonths: num(e.target.value) }))}
+                    className="num"
+                    inputMode="numeric"
+                  />
+                </Field>
+              )}
+              {terms.methods.includes('cheque') && (
+                <Field label="مدت چک" hint="ماه">
+                  <Input
+                    value={toFa(terms.chequeMonths)}
+                    onChange={(e) => setTerms((t) => ({ ...t, chequeMonths: num(e.target.value) }))}
+                    className="num"
+                    inputMode="numeric"
+                  />
+                </Field>
+              )}
             </div>
           )}
 
@@ -258,7 +287,7 @@ export function SendStep({
           </Field>
         </div>
 
-        {terms.method !== 'cash' && terms.prepayment > 0 && grandTotal > 0 && (
+        {terms.prepayment > 0 && grandTotal > 0 && terms.methods.some((m) => m !== 'cash') && (
           <p className="border-t border-line bg-steel-50 px-5 py-3 text-[13px] text-steel-600">
             پیش‌پرداخت معادل{' '}
             <span className="num font-extrabold text-steel-900">

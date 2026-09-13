@@ -571,11 +571,17 @@ export const paymentLabel: Record<PaymentMethod, string> = {
 export const PAYMENT_METHODS: PaymentMethod[] = ['cash', 'installment', 'cheque']
 
 export interface PaymentTerms {
-  method: PaymentMethod
-  /** درصد پیش‌پرداخت — فقط برای اقساط و چک معنا دارد */
+  /**
+   * روش‌های پرداخت قابل قبول — می‌تواند ترکیبی باشد.
+   * مثلاً «نقدی + چک» یعنی بخشی نقد و بخشی چک.
+   */
+  methods: PaymentMethod[]
+  /** درصد پیش‌پرداخت — وقتی اقساط یا چک انتخاب شده باشد */
   prepayment: number
-  /** تعداد ماه اقساط یا مدت چک */
-  months: number
+  /** تعداد ماه اقساط */
+  installmentMonths: number
+  /** مدت چک بر حسب ماه */
+  chequeMonths: number
   /** شرایط تکمیلی — متن آزاد و یکپارچه */
   note: string
 }

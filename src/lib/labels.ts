@@ -7,7 +7,7 @@ import type {
 export const pricingModeLabel: Record<PricingMode, string> = {
   fixed: 'قیمت مشخص',
   quote: 'استعلامی',
-  tiered: 'قیمت همکاری',
+  tiered: 'قیمت پلکانی',
 }
 
 export const stockLabel: Record<StockState, string> = {

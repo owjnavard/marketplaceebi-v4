@@ -32,7 +32,7 @@ export default function Rfq() {
   const [lines, setLines] = useState<PartLine[]>([])
   const [commitments, setCommitments] = useState<Commitment[]>([])
   const [terms, setTerms] = useState<PaymentTerms>({
-    method: 'cash', prepayment: 30, months: 3, note: '',
+    methods: ['cash'], prepayment: 30, installmentMonths: 6, chequeMonths: 3, note: '',
   })
   const [chosen, setChosen] = useState<string[]>([])
   const [showContact, setShowContact] = useState(true)

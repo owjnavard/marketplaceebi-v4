@@ -302,23 +302,32 @@ export function SpecStep({
 
         {showTable && (
           <div className="border-t border-line">
-            <div className="flex flex-wrap items-center gap-2 border-b border-line bg-steel-50 px-5 py-3">
-              <span className="flex items-center gap-1.5 text-[12.5px] text-steel-500">
-                <Wand2 size={14} />
-                پر کردن یکسان همه ردیف‌ها:
-              </span>
-              <ColumnFill label="ارتفاع سقف" placeholder="۲۵۰" onApply={(v) => applyColumn('ceiling', v, false)} />
-              <ColumnFill label="فاصله طبقات" placeholder="۳۰۰" onApply={(v) => applyColumn('height', v, false)} />
-            </div>
-
             <div className="overflow-x-auto">
               <table className="w-full min-w-[780px] text-right">
                 <thead>
                   <tr className="border-b border-line bg-steel-50 text-[12.5px] font-bold text-steel-500">
                     <th className="px-4 py-3">توقف</th>
                     <th className="px-4 py-3">شاخص</th>
-                    <th className="px-4 py-3">ارتفاع سقف (cm)</th>
-                    <th className="px-4 py-3">فاصله / ارتفاع (cm)</th>
+                    <th className="px-4 py-3">
+                      <span className="flex items-center gap-2">
+                        ارتفاع سقف (cm)
+                        <ColumnFill
+                          title="ارتفاع سقف یکسان برای همه توقف‌ها"
+                          placeholder="۲۴۰"
+                          onApply={(v) => applyColumn('ceiling', v, false)}
+                        />
+                      </span>
+                    </th>
+                    <th className="px-4 py-3">
+                      <span className="flex items-center gap-2">
+                        فاصله / ارتفاع (cm)
+                        <ColumnFill
+                          title="فاصله یکسان برای همه طبقات"
+                          placeholder="۳۱۵"
+                          onApply={(v) => applyColumn('height', v, false)}
+                        />
+                      </span>
+                    </th>
                     <th className="px-3 py-3 text-center">ورودی جلو</th>
                     <th className="px-3 py-3 text-center">ورودی پشت</th>
                     <th className="px-3 py-3 text-center">ورودی جانبی</th>
@@ -433,36 +442,67 @@ export function SpecStep({
 }
 
 /* ── پر کردن یکجای یک ستون جدول ─────────────────────────────── */
+/**
+ * پر کردن یکجای یک ستون جدول.
+ * آیکون داخل سربرگ ستون می‌نشیند و با کلیک، یک ورودی کوچک باز
+ * می‌کند — به‌جای نوار جدا بالای جدول که فضا می‌گرفت.
+ */
 function ColumnFill({
-  label, placeholder, onApply,
+  title, placeholder, onApply,
 }: {
-  label: string; placeholder: string; onApply: (v: number) => void
+  title: string; placeholder: string; onApply: (v: number) => void
 }) {
+  const [open, setOpen] = useState(false)
   const [v, setV] = useState('')
+
+  const apply = () => {
+    const n = num(v)
+    if (!n) return
+    onApply(n)
+    setOpen(false)
+    setV('')
+  }
+
   return (
-    <div className="flex items-center gap-1.5 rounded-xl border border-line bg-paper px-2 py-1">
-      <span className="text-[12.5px] text-steel-500">{label}</span>
-      <input
-        value={v}
-        onChange={(e) => setV(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key !== 'Enter') return
-          const n = num(v)
-          if (n) onApply(n)
-        }}
-        placeholder={placeholder}
-        inputMode="numeric"
-        className="num h-8 w-16 rounded-lg border border-line px-2 text-center text-[13px] focus:border-steel-500 focus:outline-none"
-      />
+    <span className="relative inline-flex">
       <button
-        onClick={() => {
-          const n = num(v)
-          if (n) onApply(n)
-        }}
-        className="rounded-lg bg-steel-800 px-2.5 py-1.5 text-[12px] font-bold text-white transition-colors hover:bg-steel-700"
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        title={title}
+        aria-label={title}
+        className={cn(
+          'flex h-7 w-7 items-center justify-center rounded-full border transition-colors',
+          open
+            ? 'border-steel-800 bg-steel-800 text-white'
+            : 'border-line bg-paper text-steel-400 hover:border-steel-300 hover:text-steel-700',
+        )}
       >
-        اعمال
+        <Wand2 size={13} />
       </button>
-    </div>
+
+      {open && (
+        <span className="absolute right-0 top-9 z-20 flex items-center gap-1.5 rounded-xl border border-line bg-paper p-2 shadow-lift">
+          <input
+            autoFocus
+            value={v}
+            onChange={(e) => setV(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') apply()
+              if (e.key === 'Escape') setOpen(false)
+            }}
+            placeholder={placeholder}
+            inputMode="numeric"
+            className="num h-8 w-20 rounded-lg border border-line px-2 text-center text-[13px] focus:border-steel-500 focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={apply}
+            className="shrink-0 rounded-lg bg-steel-800 px-2.5 py-1.5 text-[12px] font-bold text-white transition-colors hover:bg-steel-700"
+          >
+            اعمال
+          </button>
+        </span>
+      )}
+    </span>
   )
 }

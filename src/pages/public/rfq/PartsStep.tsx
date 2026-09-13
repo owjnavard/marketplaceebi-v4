@@ -415,7 +415,7 @@ export function PartsStep({
           </div>
         )}
 
-        {pane === 'help' && <HelpPane activeKey={helpKey} onSelect={setHelpKey} onBack={() => setPane('parts')} />}
+        {pane === 'help' && <HelpPane activeKey={helpKey} onBack={() => setPane('parts')} />}
 
         {pane === 'shop' && (
           <ShopPane
@@ -564,9 +564,9 @@ function CollapsibleTable({
     <Card className="overflow-hidden">
       <div
         onClick={onToggle}
-        className="flex cursor-pointer flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 transition-colors hover:bg-steel-50"
+        className="flex cursor-pointer flex-wrap items-center gap-2 border-b border-line px-4 py-3 transition-colors hover:bg-steel-50"
       >
-        <span className="flex items-center gap-2.5">
+        <span className="flex flex-1 items-center gap-2.5">
           <ChevronDown size={17} className={cn('text-steel-400 transition-transform', !open && '-rotate-90')} />
           <input
             type="checkbox"
@@ -585,7 +585,7 @@ function CollapsibleTable({
             ({toFa(checkedCount)} از {toFa(count)})
           </span>
         </span>
-        {action}
+        {action && <span onClick={(e) => e.stopPropagation()}>{action}</span>}
       </div>
       {open && children}
     </Card>
@@ -764,30 +764,15 @@ function PartsTable({
 }
 
 /* ── صفحه راهنمای تنظیمات ───────────────────────────────────── */
-function HelpPane({
-  activeKey, onSelect, onBack,
-}: {
-  activeKey: string; onSelect: (k: string) => void; onBack: () => void
-}) {
+/**
+ * راهنمای یک تنظیم.
+ * فهرست موضوعات کنارش نیست — راهنما همیشه با کلیک روی آیکون کنار
+ * همان تنظیم باز می‌شود، پس فهرست تکراری بود و فضا می‌گرفت.
+ */
+function HelpPane({ activeKey, onBack }: { activeKey: string; onBack: () => void }) {
   const h = helpFor(activeKey) ?? SETTING_HELP[0]
   return (
-    <div className="grid gap-4 md:grid-cols-[220px_1fr]">
-      <Card className="h-fit overflow-hidden">
-        {SETTING_HELP.map((x) => (
-          <button
-            key={x.key}
-            onClick={() => onSelect(x.key)}
-            className={cn(
-              'block w-full border-b border-line px-4 py-3 text-right text-[13px] transition-colors last:border-0',
-              x.key === activeKey ? 'bg-steel-800 font-bold text-white' : 'text-steel-600 hover:bg-steel-50',
-            )}
-          >
-            {x.title}
-          </button>
-        ))}
-      </Card>
-
-      <Card className="p-6">
+    <Card className="p-6">
         <h2 className="text-[18px] font-extrabold text-steel-900">{h.title}</h2>
         <p className="mt-3 text-[14.5px] leading-9 text-steel-600">{h.body}</p>
 
@@ -807,9 +792,8 @@ function HelpPane({
           <p className="text-[13.5px] leading-8 text-steel-700">{h.effect}</p>
         </div>
 
-        <Button variant="outline" className="mt-5" onClick={onBack}>بازگشت به لیست قطعات</Button>
-      </Card>
-    </div>
+      <Button variant="outline" className="mt-5" onClick={onBack}>بازگشت به لیست قطعات</Button>
+    </Card>
   )
 }
 
